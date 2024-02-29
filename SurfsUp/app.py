@@ -27,7 +27,7 @@ Measurement = Base.classes.measurement
 Station = Base.classes.station
 
 # Create a session
-session = Session(engine)
+# session = Session(engine)
 
 #################################################
 # Flask Setup
@@ -52,13 +52,13 @@ def welcome():
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    
     year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+    session = Session(engine)
     precipitation = session.query(Measurement.date, Measurement.prcp).\
         filter(Measurement.date >= year_ago)
     precip = {date: prcp for date, prcp in precipitation}
-    return jsonify(precip)     
-   
+    session.close()
+    return jsonify(precip)
 
 @app.route("/api/v1.0/stations")
 def station():

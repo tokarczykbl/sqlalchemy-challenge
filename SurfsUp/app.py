@@ -72,7 +72,21 @@ def station():
 def tobs():
     session = Session(engine)
     
+    year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+    
+    most_active_station = session.query(Measurement.station, func.count(Measurement.station).label("station_count")).\
+    group_by(Measurement.station).\
+    order_by(func.count(Measurement.station).desc()).\
+    first()
+        
+    most_active_past_year = session.query(Measurement.date, Measurement.tobs).\
+    filter(Measurement.date >= year_ago).\
+    filter(Measurement.station == most_active_station[0]).all()
+    
+    most_active_temp_list = [(tobs) for date, tobs in most_active_past_year]
+    
     session.close()
+    return jsonify (most_active_temp_list)
     
 if __name__ == "__main__":
     app.run(debug=True)

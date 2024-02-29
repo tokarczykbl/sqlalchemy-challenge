@@ -62,15 +62,17 @@ def precipitation():
 
 @app.route("/api/v1.0/stations")
 def station():
-    placeholder = 1
-    return f"Something"
-
+    session = Session(engine)
+    stations_query = session.query(Station.station).all()
+    station_list = list(np.ravel(stations_query))
+    session.close()
+    return jsonify(station_list)
 
 @app.route("/api/v1.0/tobs")
 def tobs():
-    placeholder = 1
-    return f"Something"
-
+    session = Session(engine)
+    
+    session.close()
     
 if __name__ == "__main__":
     app.run(debug=True)

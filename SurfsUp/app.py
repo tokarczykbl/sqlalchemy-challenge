@@ -5,6 +5,7 @@ from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
 from sqlalchemy import create_engine, func
 import datetime as dt
+from datetime import datetime
 from flask import Flask, jsonify
 
 
@@ -26,8 +27,6 @@ Base.prepare(autoload_with=engine)
 Measurement = Base.classes.measurement
 Station = Base.classes.station
 
-# Create a session
-# session = Session(engine)
 
 #################################################
 # Flask Setup
@@ -43,50 +42,125 @@ def welcome():
     """List all available api routes."""
     return (
         f"Welcome to my homepage! Please see available listed routes below.<br/><br/> "
-        f"/api/v1.0/precipitation<br/>"
-        f"/api/v1.0/stations<br/>"
-        f"/api/v1.0/tobs<br/>"
-        f"/api/v1.0/mm-dd-yyyy<br/>"
-        f"/api/v1.0/mm-dd-yyyy/mm-dd-yyyy"
+        f"To view date and precipitation information:&emsp;&emsp;&emsp;&emsp;/api/v1.0/precipitation<br/>"
+        f"To view a list of weather stations:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;/api/v1.0/stations<br/>"
+        f"To view the most active station's recent year's data:&emsp;/api/v1.0/tobs<br/>"
+        f"To find stats from the start date to end of data set: &emsp; /api/v1.0/yyyy-mm-dd <br/>"
+        f"To find stats for a specified period of time: &emsp;&emsp;&emsp;&emsp;/api/v1.0/yyyy-mm-dd/yyyy-mm-dd                     "
     )
+
+
 
 @app.route("/api/v1.0/precipitation")
 def precipitation():
-    year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+    
+    # Create our session (link) from Python to the DB       
     session = Session(engine)
+    
+    # Querying DB to find the max date in the Measurement table
+    max_date_row = session.query(Measurement.date).\
+        order_by(Measurement.date.desc()).first()
+    
+    # Extracting date string from the row
+    max_date = max_date_row[0]
+    
+    # Converting string to date format for date calculation
+    convert_date = datetime.strptime(max_date, '%Y-%m-%d')
+    year_ago = convert_date - dt.timedelta(days=365)
+    
+    # Querying database to find date and precipitation values for the most recent year
     precipitation = session.query(Measurement.date, Measurement.prcp).\
         filter(Measurement.date >= year_ago)
-    precip = {date: prcp for date, prcp in precipitation}
+    
+    # Creating dictionary from query results
+    precip_data = {date: prcp for date, prcp in precipitation}
+    
+    # Closing session
     session.close()
-    return jsonify(precip)
+    
+    # Printing results
+    return jsonify(precip_data)
+
 
 @app.route("/api/v1.0/stations")
 def station():
+    
+    # Create our session (link) from Python to the DB       
     session = Session(engine)
+    
+    # Querying Station table to get list of all stations
     stations_query = session.query(Station.station).all()
+    
+    # Converting the result into a list of station anmes
     station_list = list(np.ravel(stations_query))
+    
+    # Closing session
     session.close()
+    
+    # Printing list of stations
     return jsonify(station_list)
+
 
 @app.route("/api/v1.0/tobs")
 def tobs():
+
+    # Create our session (link) from Python to the DB       
     session = Session(engine)
-    
-    year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
-    
+            
+    # Finding the most active station and storing to variable
     most_active_station = session.query(Measurement.station, func.count(Measurement.station).label("station_count")).\
-    group_by(Measurement.station).\
-    order_by(func.count(Measurement.station).desc()).\
-    first()
-        
-    most_active_past_year = session.query(Measurement.date, Measurement.tobs).\
-    filter(Measurement.date >= year_ago).\
-    filter(Measurement.station == most_active_station[0]).all()
+        group_by(Measurement.station).\
+        order_by(func.count(Measurement.station).desc()).\
+        first()
     
-    most_active_temp_list = [(tobs) for date, tobs in most_active_past_year]
+    # Finding the most recent date for the most active sation
+    max_date = session.query(func.max(Measurement.date)).\
+        filter(Measurement.station == most_active_station[0]).scalar()
+           
+    # Converting string to date format for date calculation
+    convert_date = datetime.strptime(max_date, '%Y-%m-%d')
+    year_ago = convert_date - dt.timedelta(days=365)
+    
+    most_active_past_year = session.query(Measurement.tobs).\
+        filter(Measurement.date >= year_ago).\
+        filter(Measurement.station == most_active_station[0]).all()
+    
+    # Creating list from query results
+    most_active_temp_list = [tobs[0] for tobs in most_active_past_year]
+    
+    # Closing session
+    session.close()
+    
+    # Printing results
+    return jsonify (most_active_temp_list)
+
+    
+@app.route("/api/v1.0/mm-dd-yyyy")
+def open_stats():
+    session = Session(engine)
+    stats = session.query()
+    
+    
     
     session.close()
-    return jsonify (most_active_temp_list)
-    
+    return jsonify
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 if __name__ == "__main__":
     app.run(debug=True)

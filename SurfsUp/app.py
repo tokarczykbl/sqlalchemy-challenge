@@ -45,10 +45,9 @@ def welcome():
         f"To view date and precipitation information:&emsp;&emsp;&emsp;&emsp;/api/v1.0/precipitation<br/>"
         f"To view a list of weather stations:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;/api/v1.0/stations<br/>"
         f"To view the most active station's recent year's data:&emsp;/api/v1.0/tobs<br/>"
-        f"To find stats from the start date to end of data set: &emsp; /api/v1.0/yyyy-mm-dd <br/>"
-        f"To find stats for a specified period of time: &emsp;&emsp;&emsp;&emsp;/api/v1.0/yyyy-mm-dd/yyyy-mm-dd                     "
+        f"To find stats from the start date to end of data set: &emsp; /api/v1.0/<start> <br/>"
+        f"To find stats for a specified period of time: &emsp;&emsp;&emsp;&emsp;/api/v1.0/<start>/<end>
     )
-
 
 
 @app.route("/api/v1.0/precipitation")
@@ -107,7 +106,7 @@ def tobs():
     # Create our session (link) from Python to the DB       
     session = Session(engine)
             
-    # Finding the most active station and storing to variable
+    # Finding the most active station and storing it in a variable
     most_active_station = session.query(Measurement.station, func.count(Measurement.station).label("station_count")).\
         group_by(Measurement.station).\
         order_by(func.count(Measurement.station).desc()).\
@@ -121,6 +120,7 @@ def tobs():
     convert_date = datetime.strptime(max_date, '%Y-%m-%d')
     year_ago = convert_date - dt.timedelta(days=365)
     
+    # Querying the database to find temperature observations for the most active station in the past year
     most_active_past_year = session.query(Measurement.tobs).\
         filter(Measurement.date >= year_ago).\
         filter(Measurement.station == most_active_station[0]).all()
@@ -131,12 +131,14 @@ def tobs():
     # Closing session
     session.close()
     
-    # Printing results
+    # Returning temperature observations for the most active station in the past year as a JSON response
     return jsonify (most_active_temp_list)
 
     
 @app.route("/api/v1.0/mm-dd-yyyy")
 def open_stats():
+    # Create our session (link) from Python to the DB       
+
     session = Session(engine)
     stats = session.query()
     

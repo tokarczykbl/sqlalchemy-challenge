@@ -42,12 +42,15 @@ def welcome():
     """List all available api routes."""
     return (
         f"Welcome to my homepage! Please see available listed routes below.<br/><br/> "
-        f"To view date and precipitation information:&emsp;&emsp;&emsp;&emsp;/api/v1.0/precipitation<br/>"
-        f"To view a list of weather stations:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;/api/v1.0/stations<br/>"
-        f"To view the most active station's recent year's data:&emsp;/api/v1.0/tobs<br/>"
-        f"To find stats from the start date to end of data set: &emsp; /api/v1.0/<start> <br/>"
-        f"To find stats for a specified period of time: &emsp;&emsp;&emsp;&emsp;/api/v1.0/<start>/<end>
-    )
+        f"&emsp;To view date and precipitation information:&emsp;&emsp;&emsp;&emsp;/api/v1.0/precipitation<br/>"
+        f"&emsp;To view a list of weather stations:&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;/api/v1.0/stations<br/>"
+        f"&emsp;To view the most active station's recent year's data:&emsp;/api/v1.0/tobs<br/>"
+        f"<br>"
+        f"For dynamic date entries use YYYY-MM-DD formating<br/>"
+        f"<br>"
+        f"&emsp;To find stats from the start date to end of data set: &emsp; /api/v1.0/&lt;start&gt;<br/>"
+        f"&emsp;To find stats for a specified period of time: &emsp;&emsp;&emsp;&emsp;/api/v1.0/&lt;start&gt;/&lt;end&gt;<br/>"
+   )
 
 
 @app.route("/api/v1.0/precipitation")
@@ -146,22 +149,6 @@ def open_stats():
     
     session.close()
     return jsonify
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 if __name__ == "__main__":

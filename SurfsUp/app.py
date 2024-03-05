@@ -60,15 +60,10 @@ def precipitation():
     session = Session(engine)
     
     # Querying DB to find the max date in the Measurement table
-    max_date_row = session.query(Measurement.date).\
-        order_by(Measurement.date.desc()).first()
-    
-    # Extracting date string from the row
-    max_date = max_date_row[0]
+    max_date = session.query(func.max(Measurement.date)).scalar()
     
     # Converting string to date format for date calculation
-    convert_date = datetime.strptime(max_date, '%Y-%m-%d')
-    year_ago = convert_date - dt.timedelta(days=365)
+    year_ago = datetime.strptime(max_date, '%Y-%m-%d') - dt.timedelta(days=365)
     
     # Querying database to find date and precipitation values for the most recent year
     precipitation = session.query(Measurement.date, Measurement.prcp).\

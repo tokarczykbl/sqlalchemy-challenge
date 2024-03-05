@@ -138,18 +138,55 @@ def tobs():
     return jsonify (most_active_temp_list)
 
     
-@app.route("/api/v1.0/mm-dd-yyyy")
-def open_stats():
+@app.route("/api/v1.0/<start>")
+def open_stats(start):
     # Create our session (link) from Python to the DB       
-
     session = Session(engine)
-    stats = session.query()
     
+    # List for querying min, average and max temperatures
+    sel=[func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
     
+    # Querying session based on start date selected
+    open_stats = session.query(*sel).\
+        filter(Measurement.date >= start).all()
     
+    for min, avg, max in open_stats:
+        open_stats_dict = {}
+        open_stats_dict["Min"] = min
+        open_stats_dict["Average"] = avg
+        open_stats_dict["Max"] = max
+    
+    # Closing session
     session.close()
-    return jsonify
+    
+    # Returning temperature observations for open date range from specified start as a JSON response
+    return jsonify(open_stats_dict)
 
+@app.route("/api/v1.0/<start>/<end>")
+def open_close_stats(start, end):
+    # Create our session (link) from Python to the DB       
+    session = Session(engine)
+    
+    # List for querying min, average and max temperatures
+    sel=[func.min(Measurement.tobs), func.avg(Measurement.tobs), func.max(Measurement.tobs)]
+    
+    # Querying session based on start and end dates selected
+    open_close_stats = session.query(*sel).\
+        filter(Measurement.date >= start).\
+        filter(Measurement.date <= end).all()
+    
+    # Creating dictionary from query results
+    for min, avg, max in open_close_stats:
+        open_close_stats_dict = {}
+        open_close_stats_dict["Min"] = min
+        open_close_stats_dict["Average"] = avg
+        open_close_stats_dict["Max"] = max
+    
+    # Closing session
+    session.close()
+    
+    # Returning temperature observations for closed date range from specified start and end as a JSON response
+    return jsonify(open_close_stats_dict)
 
 if __name__ == "__main__":
     app.run(debug=True)
